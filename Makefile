@@ -1,3 +1,3 @@
 all: server
 server: http_parser.c server_http.c
-	gcc http_parser.c server_http.c -o server
+	gcc http_parser.c multipart_parser.c server_http.c -o server
