@@ -19,6 +19,7 @@ static void multipart_log(const char * format, ...)
     vfprintf(stderr, format, args);
     fprintf(stderr, "\n");
 #endif
+    //printf("%s\n", format);
 }
 
 #define NOTIFY_CB(FOR)                                                 \
@@ -80,7 +81,7 @@ enum state {
 multipart_parser* multipart_parser_init
     (const char *boundary, const multipart_parser_settings* settings) {
 
-  multipart_parser* p = malloc(sizeof(multipart_parser) +
+  multipart_parser* p = (multipart_parser*)malloc(sizeof(multipart_parser) +
                                strlen(boundary) +
                                strlen(boundary) + 9);
 
@@ -176,8 +177,8 @@ size_t multipart_parser_execute(multipart_parser* p, const char *buf, size_t len
           return i;
         }
         if (is_last)
-            EMIT_DATA_CB(header_field, buf + mark, (i - mark) + 1);
-        break;
+                    EMIT_DATA_CB(header_field, buf + mark, (i - mark) + 1);
+                break;
 
       case s_headers_almost_done:
         multipart_log("s_headers_almost_done");

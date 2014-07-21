@@ -1,0 +1,3 @@
+all: server
+server: http_parser.c server_http.c attrs_map.c dict.c headers_map.c multipart_parser.c string_util.c str_map.c log.h
+	gcc *.c -o server
