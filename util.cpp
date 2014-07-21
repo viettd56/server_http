@@ -51,7 +51,8 @@ void attrs_map_str_parse(std::map<string, string> &map, const char *str)
         string str_name(str_trim(name));
         string str_value(str_trim(str_strip_quotes(value)));    
 
-        map.insert (std::pair<string, string>(str_name, str_value));
+        // map.insert (std::pair<string, string>(str_name, str_value));
+        map[str_name] = str_value;
     }
 
     free(original_ptr);

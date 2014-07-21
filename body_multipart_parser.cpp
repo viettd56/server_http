@@ -2,6 +2,7 @@
 #include "util.hpp"
 #include <cstring>
 #include <iostream>
+#include <cstdio>
 
 namespace body_multipart_parser
 {
@@ -12,9 +13,18 @@ string last_value = "";
 enum state {NAME, VALUE};
 state last_state;
 bool is_complete = false;
+string name_file = "";
+FILE *fr = NULL;
 
 map<string, string> headers_map_parsed;
 map<string, string> params_map_parsed;
+
+void write_data(FILE *fr,const char *buffer, const int n)
+{
+    fflush(fr);
+    fwrite(buffer, sizeof(char), n, fr); /* write data to file */
+}
+
 
 int read_header_name(multipart_parser *p, const char *buf, size_t len)
 {
@@ -42,26 +52,30 @@ int read_header_value(multipart_parser *p, const char *buf, size_t len)
     }
     headers_map_parsed.insert (std::pair<string, string>(last_name, last_value));
     last_state = VALUE;
+    std::cout << last_name << ":" << last_value << "\n";
     return 0;
 }
 
 int on_part_data(multipart_parser *p, const char *at, size_t length)
 {
-    //printf("Data: %s\n", at);
+    //std::cout << "Data: " <<  at;
+    //std::cout << "Data" << "\n";
+    write_data(fr, at, length);
     return 0;
 }
 
 int on_part_data_end(multipart_parser *p)
 {
-    //printf("-------end data\n");
+    std::cout << "-------end data\n";
+    fclose(fr);
     return 0;
 }
 
 int on_body_end(multipart_parser *p)
 {
 
-    for (std::map<string, string>::iterator it = headers_map_parsed.begin(); it != headers_map_parsed.end(); ++it)
-        std::cout << it->first << " => " << it->second << '\n';
+    // for (std::map<string, string>::iterator it = headers_map_parsed.begin(); it != headers_map_parsed.end(); ++it)
+    //     std::cout << it->first << " => " << it->second << '\n';
 
     is_complete = true;
     //printf("-------end body\n");
@@ -71,18 +85,27 @@ int on_body_end(multipart_parser *p)
 
 int on_part_data_begin(multipart_parser *p)
 {
-    //printf("-------begin data\n");
+    std::cout << "-------begin data\n";
 
     return 0;
 }
 
 int on_headers_complete(multipart_parser *p)
 {
-    //printf("-------header complete\n");
+    std::cout << "-------header complete\n";
+    params_map_parsed.clear();
+    attrs_map_str_parse(params_map_parsed,
+                        headers_map_parsed.find("Content-Disposition")->second.c_str() + strlen("form-data;"));
+    name_file = params_map_parsed.find("filename")->second;
+    std::cout << name_file;
+    fr = fopen(name_file.c_str(), "wb");
+    
+    //parser_body = body_multipart_parser::body_multipart_parser_init(boundary.c_str());
+    //std::cout << parser_body;
     return 0;
 }
 
-multipart_parser* body_multipart_parser_init(const char *boundary)
+multipart_parser *body_multipart_parser_init(const char *boundary)
 {
     memset(&parser_body_settings, 0, sizeof(multipart_parser_settings));
 
@@ -104,7 +127,7 @@ multipart_parser* body_multipart_parser_init(const char *boundary)
 }
 void body_multipart_parser_excute(multipart_parser *parser, const char *buf, char n)
 {
-    int nparsed = multipart_parser_execute(parser, buf, n);    
+    int nparsed = multipart_parser_execute(parser, buf, n);
     if (nparsed != n)
     {
         error("parser body error");
